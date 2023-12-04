@@ -19,17 +19,15 @@ def new_game():
     actions = {1: 'x', 2: 'o'}
 
     while not win and win is not None:
-        moves = list(
-            map(int,
-                input(
-                    f'Player {cur_player}, enter your move as coordinates separated with space [↓ →] (e.g. 0 1):   '
-                ).strip().split())
-        )
-        if len(moves) != 2:
+        moves = input(
+            f'Player {cur_player}, enter your move as coordinates separated with space [↓ →] (e.g. 0 1):   '
+        ).strip().split()
+
+        if len(moves) != 2 or not any(move.isdigit() for move in moves):
             print('Please enter only 2 digits separated with space.')
             continue
         else:
-            move_x, move_y = moves
+            move_x, move_y = map(int, moves)
 
         if move_x not in range(3) or move_y not in range(3):
             print('Your coordinates should be numbers between 0 and 2!')
