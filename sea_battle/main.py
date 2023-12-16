@@ -1,4 +1,5 @@
-import random
+from game_classes import Game
 
-from custom_exceptions import *
-from game_classes import Ship, Dot
+if __name__ == '__main__':
+    new_game = Game()
+    new_game.start()

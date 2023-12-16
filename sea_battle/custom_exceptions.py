@@ -8,3 +8,7 @@ class AlreadyShotException(Exception):
 
 class TooCloseException(Exception):
     pass
+
+
+class MaxShipOfLength(Exception):
+    pass
