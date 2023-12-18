@@ -1,4 +1,6 @@
 import random
+import time
+import itertools
 
 from custom_exceptions import *
 
@@ -15,6 +17,12 @@ class Dot:
     def __eq__(self, other_dot):
         return self.x == other_dot.x and self.y == other_dot.y
 
+    def __str__(self):
+        return f'({self.x}, {self.y})'
+
+    def __hash__(self):
+        return hash(f"{self.x},{self.y}")
+
 
 class Ship:
     """
@@ -25,9 +33,9 @@ class Ship:
     """
     def __init__(self, length, start_dot, orient):
         if length not in range(1, 4):
-            raise ValueError('Ship length must be 1, 2 or 3.')
+            raise ValueError('WARNING! Ship length must be 1, 2 or 3.')
         if orient not in ['h', 'v']:
-            raise ValueError('Orientation must be written as "h" or "v".')
+            raise ValueError('WARNING! Orientation must be written as "h" or "v".')
 
         self.length = length
         self.start = start_dot
@@ -36,11 +44,12 @@ class Ship:
 
         if length != 1:
             if orient == 'v':
-                self.my_dots = [self.start] + [Dot(self.start.x, self.start.y + i) for i in range(1, length)]
-            else:
                 self.my_dots = [self.start] + [Dot(self.start.x + i, self.start.y) for i in range(1, length)]
+            else:
+                self.my_dots = [self.start] + [Dot(self.start.x, self.start.y + i) for i in range(1, length)]
         else:
             self.my_dots = [self.start]
+        # print([(dot.x, dot.y) for dot in self.my_dots])
 
     def dots(self):
         """
@@ -57,7 +66,7 @@ class Board:
     alive_ships: Количество живых кораблей на доске.
     """
     def __init__(self, hid=True):
-        self.board = [[Dot(x, y) for x in range(6)] for y in range(6)]
+        self.board = [[Dot(x+1, y+1) for y in range(6)] for x in range(6)]
         # self.board = [['o' for x in range(6)] for y in range(6)]
         self.taken_spots = []
         self.shots = []
@@ -71,17 +80,20 @@ class Board:
         Ставит корабль на доску
         """
         if self.out(Dot(x, y)):
-            raise BoardOutException('Dot coordinates must be within the board')
+            raise BoardOutException('WARNING! Dot coordinates must be within the board.')
 
         ship_lengths = [ship.length for ship in self.ships]
         if (length == 3 and 3 in ship_lengths) \
                 or (length == 2 and ship_lengths.count(2) == 2)\
                 or (length == 1 and ship_lengths.count(1) == 4):
-            raise MaxShipOfLength('Sorry you cant place another ship of that length!')
+            raise MaxShipOfLength('WARNING! Sorry you cant place another ship of that length!')
 
-        new_ship = Ship(length, Dot(x - 1, y - 1), orient)
+        new_ship = Ship(length, Dot(x, y), orient)
         if any(dot in self.taken_spots for dot in new_ship.dots()):
-            raise TooCloseException('The ship cant be placed here.')
+            raise TooCloseException('WARNING! The ship cant be placed here. This dot is too close to another ship.')
+
+        if any(self.out(dot) for dot in new_ship.dots()):
+            raise BoardOutException('WARNING! All the dots of the ship must be within the board.')
 
         self.ships.append(new_ship)
         self.alive_ships += 1
@@ -115,9 +127,9 @@ class Board:
 
         print('\n')
         print(*[' ', 1, 2, 3, 4, 5, 6], sep=' | ')
-        for row in range(6):
-            print(row + 1, end=' | ')
-            for dot in self.board[row]:
+        for x in range(6):
+            print(x + 1, end=' | ')
+            for dot in self.board[x]:
                 if dot in self.shots:
                     print('X', end=' | ')
                 elif dot in ships_dots and not self.hid:
@@ -134,7 +146,7 @@ class Board:
         """
         Проверяет, выходит ли точка за пределы поля
         """
-        if dot.x in range(6) and dot.y in range(6):
+        if dot.x in range(1, 7) and dot.y in range(1, 7):
             return False
         return True
 
@@ -144,14 +156,19 @@ class Board:
         """
         dot = Dot(x, y)
         if self.out(dot):
-            raise BoardOutException('Dot coordinates must be within the board')
-        if dot in self.shots:
-            raise AlreadyShotException('You cant shoot here.')
+            raise BoardOutException('WARNING! Dot coordinates must be within the board')
+        if dot in self.shots or dot in self.misses:
+            raise AlreadyShotException('WARNING! You cant shoot here again.')
 
+        print([len(ship.dots()) for ship in self.ships])
         if any(dot in ship.dots() for ship in self.ships):
             self.shots.append(dot)
+            if any([all(dot in self.shots for dot in ship.dots()) for ship in self.ships]):
+                self.alive_ships -= 1
+            print('ALIVE SHIPS: ', self.alive_ships)
             return True
         else:
+            print('Its a miss!')
             self.misses.append(dot)
             return False
 
@@ -164,8 +181,8 @@ class Player:
     my_board: Собственная доска игрока
     enemy_board: Доска врага
     """
-    def __init__(self):
-        self.my_board = Board(hid=False)
+    def __init__(self, hid=True):
+        self.board = Board(hid)
         self.enemy_board = Board(hid=True)
 
     def ask(self):
@@ -194,6 +211,9 @@ class Player:
 
 
 class AI(Player):
+    def __init__(self, hid=True):
+        super().__init__(hid)
+
     def ask(self):
         x = random.randint(1, 7)
         y = random.randint(1, 7)
@@ -201,9 +221,12 @@ class AI(Player):
 
 
 class User(Player):
+    def __init__(self, hid=False):
+        super().__init__(hid)
+
     def ask(self):
         try:
-            x, y = map(int, input('Where are you taking your shot? (e.g. 1 2): ').split())
+            x, y = map(int, input('Where are you taking your shot? [↓→] (e.g. 1 2): ').split())
         except ValueError:
             print('Coordinates must be numbers')
             self.ask()
@@ -214,54 +237,70 @@ class User(Player):
 class Game:
     def __init__(self):
         self.user = User()
-        self.user_board = self.user.my_board
+        # self.user_board = self.user.board
 
         self.ai = AI()
-        self.ai_board = self.ai.my_board
+        # self.ai_board = self.ai.board
 
     def random_board(self):
         """
         Генерирует случайную доску
         """
-        for _ in range(500):
-            x = random.randint(1, 7)
-            y = random.randint(1, 7)
+        self.ai = AI()      # refreshing the board
+        # self.ai_board = self.ai.board
+
+        all_combos = list(itertools.product(list(range(1, 7)), list(range(1, 7))))
+        for _ in range(len(all_combos)):
+            all_combos = [comb for comb in all_combos if Dot(*comb) not in self.ai.board.taken_spots]
+            if not all_combos:
+                self.random_board()
+                return
+            x, y = random.choice(all_combos)
             orient = random.choice(['h', 'v'])
-            if not self.ai_board.ships:
+            if not self.ai.board.ships:
                 length = 3
-            elif len(self.ai_board.ships) in [1, 2]:
+            elif len(self.ai.board.ships) in [1, 2]:
                 length = 2
-            elif len(self.ai_board.ships) in range(3, 8):
+            elif len(self.ai.board.ships) in range(3, 7):
                 length = 1
             else:
-                break
+                return
 
             try:
-                self.ai_board.add_ship(x, y, orient, length)
-            except:
+                self.ai.board.add_ship(x, y, orient, length)
+            except Exception as e:
+                # print(e)
                 continue
         else:
             self.random_board()
+            return
 
     def fill_user_board(self):
         """
         Метод запроса пользователя для добавления кораблей
         """
-        while self.user_board.alive_ships != 7:
-            print(self.user_board)
+        while self.user.board.alive_ships != 7:
+            print(self.user.board)
             try:
                 x, y = map(int, input('Input coordinates of the bow of the ship (e.g. 1 2): ').split())
             except ValueError:
                 print('Coordinates must be numbers')
                 self.fill_user_board()
             else:
-                orient = input('Which way is it sailing - horizontaly (h) or vertically (v)?: ')
                 length = input('What`s the length of this ship?: ').strip()
+                if length != '1':
+                    orient = input('Which way is it sailing - horizontaly (h) or vertically (v)?: ')
+                else:
+                    orient = 'h'
 
                 try:
-                    self.user_board.add_ship(int(x), int(y), orient, int(length))
-                except:
+                    self.user.board.add_ship(int(x), int(y), orient, int(length))
+                except Exception as e:
+                    print('Ship wasn`t added.')
+                    print(e)
                     self.fill_user_board()
+        else:
+            print(self.user.board)
 
     @staticmethod
     def greet():
@@ -295,13 +334,20 @@ class Game:
         сколько живых кораблей осталось на досках, чтобы определить победу
         """
         # fill human board # TODO: check that person entered enough ships in FILL_USER_BOARD method
-        print('Lets begin by setting up your ships:')
-        self.fill_user_board()
         print('Please wait while AI is setting its board up...')
-        self.random_board()
+        try:
+            self.random_board()
+        except Exception as e:
+            print(e)
+        # print(self.ai.board)
+        print('Lets now set up your ships:')
+        self.fill_user_board()
         print('All players are ready. Let the game begin!')
 
-        while self.user_board.alive_ships or self.ai_board.alive_ships:
+        self.user.enemy_board = self.ai.board
+        self.ai.enemy_board = self.user.board
+
+        while self.user.board.alive_ships and self.ai.board.alive_ships:
             print('User, your turn!')
             print(self.user.enemy_board)
             result = self.user.move()
@@ -312,18 +358,20 @@ class Game:
 
             print('Now it`s AIs move.')
             result_ai = self.ai.move()
-            print(self.user.my_board)
+            print(self.ai.enemy_board)
+            time.sleep(1.5)
             while result_ai:
                 print('Oh crap! He hit it! AI`s going for another shot.')
                 result_ai = self.ai.move()
-                print(self.user.my_board)
+                print(self.ai.enemy_board)
+                time.sleep(1.5)
         else:
-            if not self.ai_board.alive_ships:
+            if not self.ai.board.alive_ships:
                 print('Oh my god! You did it! Congratulations user, it`s your victory!!!!!!!!!!!!')
-                print(self.ai.my_board)
+                print(self.user.enemy_board)
             else:
                 print('Well, the AI has a good eye today. Better luck next time, user!')
-                print(self.user.my_board)
+                print(self.ai.enemy_board)
 
     def start(self):
         """
