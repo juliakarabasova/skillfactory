@@ -14,7 +14,7 @@ The [Tic Tac Toe](https://github.com/juliakarabasova/skillfactory/tree/main/tic_
 
 The [Sea Battle](https://github.com/juliakarabasova/skillfactory/tree/main/sea_battle "Sea Battle") project. A game for one player vs AI. How to use:
 ```
->> Download whol folder (containing 3 .py files)
+>> Download whole folder (containing 3 .py files)
 >> Run main.py in any convenient environment/IDE, the game will start automatically
 >> No dependencies or requirements 
 ```
