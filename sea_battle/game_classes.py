@@ -341,13 +341,12 @@ class Game:
         Последовательно вызываем метод move для игроков и делаем проверку,
         сколько живых кораблей осталось на досках, чтобы определить победу
         """
-        # fill human board # TODO: check that person entered enough ships in FILL_USER_BOARD method
         print('Please wait while AI is setting its board up...')
         try:
             self.random_board()
         except Exception as e:
             print(e)
-        print(self.ai.show_board)
+        # print(self.ai.show_board)         # to see the AI board for testing
         print('Lets now set up your ships:')
         self.fill_user_board()
         print('All players are ready. Let the game begin!')
