@@ -12,3 +12,7 @@ class TooCloseException(Exception):
 
 class MaxShipOfLength(Exception):
     pass
+
+
+class NoSpaceException(Exception):
+    pass

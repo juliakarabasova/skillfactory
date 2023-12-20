@@ -82,6 +82,9 @@ class Board:
         if self.out(Dot(x, y)):
             raise BoardOutException('WARNING! Dot coordinates must be within the board.')
 
+        if len(self.taken_spots) == 36:
+            raise NoSpaceException('WARNING! You have no place for ships left, please restart the game.')
+
         ship_lengths = [ship.length for ship in self.ships]
         if (length == 3 and 3 in ship_lengths) \
                 or (length == 2 and ship_lengths.count(2) == 2)\
@@ -160,12 +163,12 @@ class Board:
         if dot in self.shots or dot in self.misses:
             raise AlreadyShotException('WARNING! You cant shoot here again.')
 
-        print([len(ship.dots()) for ship in self.ships])
         if any(dot in ship.dots() for ship in self.ships):
             self.shots.append(dot)
             if any([all(dot in self.shots for dot in ship.dots()) for ship in self.ships]):
+                self.ships.pop([all(dot in self.shots for dot in ship.dots()) for ship in self.ships].index(True))
                 self.alive_ships -= 1
-            print('ALIVE SHIPS: ', self.alive_ships)
+            # print('ALIVE SHIPS: ', self.alive_ships)
             return True
         else:
             print('Its a miss!')
@@ -213,10 +216,11 @@ class Player:
 class AI(Player):
     def __init__(self, hid=True):
         super().__init__(hid)
+        self.show_board = Board(hid=False)
 
     def ask(self):
-        x = random.randint(1, 7)
-        y = random.randint(1, 7)
+        x = random.randint(1, 6)
+        y = random.randint(1, 6)
         return x, y
 
 
@@ -228,7 +232,7 @@ class User(Player):
         try:
             x, y = map(int, input('Where are you taking your shot? [↓→] (e.g. 1 2): ').split())
         except ValueError:
-            print('Coordinates must be numbers')
+            print('WARNING! Coordinates must be numbers')
             self.ask()
         else:
             return x, y
@@ -264,6 +268,8 @@ class Game:
             elif len(self.ai.board.ships) in range(3, 7):
                 length = 1
             else:
+                self.ai.show_board.board = self.ai.board.board.copy()
+                self.ai.show_board.ships = self.ai.board.ships.copy()
                 return
 
             try:
@@ -284,7 +290,7 @@ class Game:
             try:
                 x, y = map(int, input('Input coordinates of the bow of the ship (e.g. 1 2): ').split())
             except ValueError:
-                print('Coordinates must be numbers')
+                print('WARNING! Coordinates must be numbers')
                 self.fill_user_board()
             else:
                 length = input('What`s the length of this ship?: ').strip()
@@ -307,7 +313,7 @@ class Game:
         """
         В консоли приветствует пользователя и рассказывает о формате ввода
         """
-        print('='*50)
+        print('='*100)
         print('''
         Welcome, dear user, to the SEA BATTLE game!
         You are going to play against AI randomly placing its ships and taking its shots.
@@ -317,6 +323,8 @@ class Game:
                 ► 2 ships of 2 cells long;
                 ► 4 ships of 1 cell.
                 
+        Whenever you have no more place for a ship, please restart the game. You will such warning.
+                
         The game will ask you to enter first coordinates of the head of your ship in two numbers separated with space.
         Then, you are to enter which way your ship is facing and lastly the length of it.
         
@@ -324,7 +332,7 @@ class Game:
         Whenever anyone hits a ship, they get another move.
         The game ends when one of you hits all ships of the enemy. Good luck, player!
         ''')
-        print('=' * 50)
+        print('=' * 100)
 
     def loop(self):
         """
@@ -339,7 +347,7 @@ class Game:
             self.random_board()
         except Exception as e:
             print(e)
-        # print(self.ai.board)
+        print(self.ai.show_board)
         print('Lets now set up your ships:')
         self.fill_user_board()
         print('All players are ready. Let the game begin!')
@@ -351,7 +359,7 @@ class Game:
             print('User, your turn!')
             print(self.user.enemy_board)
             result = self.user.move()
-            while result:
+            while result and (self.user.board.alive_ships and self.ai.board.alive_ships):
                 print('Nice shot! You get another one.')
                 print(self.user.enemy_board)
                 result = self.user.move()
@@ -360,7 +368,7 @@ class Game:
             result_ai = self.ai.move()
             print(self.ai.enemy_board)
             time.sleep(1.5)
-            while result_ai:
+            while result_ai and (self.user.board.alive_ships and self.ai.board.alive_ships):
                 print('Oh crap! He hit it! AI`s going for another shot.')
                 result_ai = self.ai.move()
                 print(self.ai.enemy_board)
