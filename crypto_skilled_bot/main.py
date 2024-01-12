@@ -34,17 +34,22 @@ def values(message: telebot.types.Message):
 # param: content_types (['text', 'voice', 'sticker', 'document'...]) or commands (personalised commands names)
 @bot.message_handler(content_types=['text'])
 def convert(message):
-    from_val, to_val, amount = message.text.split()
-    # TODO: too much values exception
-    # TODO: too little values
+    input_vals = message.text.split()
+    if len(input_vals) != 3:
+        bot.reply_to(message.chat.id, f'(400) Пользовательская ошибка.\n'
+                                      f'Невозможно определить две валюты и количество для перевода.')
+        return
+
+    from_val, to_val, amount = input_vals
+
     try:
         total = CryptoConverter.convert(from_val, to_val, amount)
     except APIException as e:
-        bot.reply_to(message.chat.id, f'(422) Пользовательская ошибка.\n{e}')
+        bot.reply_to(message.chat.id, f'(400) Пользовательская ошибка.\n{e}')
     except Exception as ex:
         bot.reply_to(message.chat.id, f'(500) Серверная ошибка! Пожалуйста, повторите позднее.\n{ex}')
     else:
-        bot.reply_to(message.chat.id, f'Стоимость {amount} {from_val} в {to_val}: {total}')
+        bot.reply_to(message.chat.id, f'Стоимость {amount} {from_val} = {total} {to_val}')
 
 
 bot.polling(none_stop=True)
