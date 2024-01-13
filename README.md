@@ -18,3 +18,15 @@ The [Sea Battle](https://github.com/juliakarabasova/skillfactory/tree/main/sea_b
 >> Run main.py in any convenient environment/IDE, the game will start automatically
 >> No dependencies or requirements 
 ```
+
+## 3. Итоговое задание 12.6.1 (PJ-02)
+
+The [Currency Bot](https://github.com/juliakarabasova/skillfactory/tree/main/currency_skilled_bot "Currency Bot") project. Background for Telegram Bot for currency conversion. How to use:
+```
+>> Download folder (containing 3 .py and 1 .txt files)
+>> Run "pip install -r requirements.txt" command in a venv terminal
+>> Run main.py in any convenient environment/IDE
+>> Visit @crypto_skilled_bot in Telegram
+```
+
+> [Currency Skilled Bot](https://t.me/crypto_skilled_bot) (@crypto_skilled_bot)
