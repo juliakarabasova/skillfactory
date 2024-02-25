@@ -29,7 +29,7 @@ The [Currency Bot](https://github.com/juliakarabasova/skillfactory/tree/main/cur
 >> Visit @crypto_skilled_bot in Telegram
 ```
 
-<img src="https://github.com/juliakarabasova/skillfactory/tree/main/currency_skilled_bot/currency_botpic.jpg" width="200" height="200">
+<img src="https://github.com/juliakarabasova/skillfactory/blob/main/currency_skilled_bot/currency_botpic.jpg" width="200" height="200">
 
 > [Currency Skilled Bot](https://t.me/crypto_skilled_bot) (@crypto_skilled_bot)
 
@@ -43,6 +43,6 @@ The [Meals Bot](https://github.com/juliakarabasova/skillfactory/tree/main/meals_
 >> Visit @meals_skilled_bot in Telegram
 ```
 
-<img src="https://github.com/juliakarabasova/skillfactory/tree/main/meals_skilled_bot/meals_botpic.jpg" width="200" height="200">
+<img src="https://github.com/juliakarabasova/skillfactory/blob/main/meals_skilled_bot/meals_botpic.jpg" width="200" height="200">
 
 > [Meals Skilled Bot](https://t.me/meals_skilled_bot) (@meals_skilled_bot)
